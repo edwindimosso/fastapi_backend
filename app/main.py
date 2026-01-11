@@ -1,22 +1,17 @@
 from . import models
-from .database import SessionLocal, engine
-from fastapi import FastAPI
+from .database import SessionLocal, engine, get_db
+from fastapi import FastAPI, Depends
 from app.models import Post
 from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
+from sqlalchemy.orm import Session
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 posts = [
@@ -26,6 +21,7 @@ posts = [
     Post(id=4, title="Fourth Post", content="This is the content of the fourth post"),
     Post(id=5, title="Fifth Post", content="This is the content of the fifth post")
 ]
+
 #Database connection
 while True:
     try:
@@ -47,12 +43,16 @@ while True:
 def main():
     return "Hello, World!"
 
+@app.get("/sqlalchemy")
+def get_sqlalchemy(db: Session = Depends(get_db)):
+    return "SQLAlchemy is working!"
+
 @app.get("/posts")
 def get_all_posts():
     cursor.execute("SELECT * FROM posts")
     posts = cursor.fetchall()
 
-    return posts
+    return posts 
 
 @app.post("/posts")
 def add_posts(post: Post):
@@ -69,7 +69,7 @@ def get_post(id: int):
    cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
    post = cursor.fetchone()
    if post:
-       return post
+       return post 
    return ("Post not found")
 
 @app.put("/posts/{id}")
@@ -79,7 +79,7 @@ def update_post(id: int, post: Post):
     updated_post = cursor.fetchone()
     conn.commit()
     if updated_post:
-            return updated_post
+            return updated_post 
         
     return "Post not found"
 
