@@ -63,18 +63,21 @@ def get_post(id: int):
 
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
-    for i in range(len(posts)):
-        if posts[i].id == id:
-            posts[i] = post
-            return post
+    cursor.execute("UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *",
+                   (post.title, post.content, post.published, str(id)))
+    updated_post = cursor.fetchone()
+    conn.commit()
+    if updated_post:
+            return updated_post
         
     return "Post not found"
 
 @app.delete("/posts/{id}")
 def delete_posts(id: int):
-    for i in range(len(posts)):
-        if posts[i].id == id:
-            deleted_post = posts.pop(i)
+    cursor.execute("DELETE FROM posts WHERE id = %s RETURNING *", (str(id),))
+    deleted_post = cursor.fetchone()
+    conn.commit()
+    if deleted_post:
             return deleted_post
         
     return "Post not found"
