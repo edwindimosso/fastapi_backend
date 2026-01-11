@@ -36,13 +36,18 @@ def main():
 
 @app.get("/posts")
 def get_all_posts():
+    cursor.execute("SELECT * FROM posts")
+    posts = cursor.fetchall()
+
     return posts
 
 @app.post("/posts")
 def add_posts(post: Post):
-    post.id = randrange(1000000)
-    posts.append(post)
-    return post
+    cursor.execute("INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *",
+                   (post.title, post.content, post.published))
+    new_post = cursor.fetchone()
+    conn.commit()
+    return new_post
 
 @app.get("/posts/latest")
 def get_latest_post():
@@ -50,11 +55,11 @@ def get_latest_post():
 
 @app.get("/posts/{id}")
 def get_post(id: int):
-    for post in posts:
-        if post.id == id:
-            return post
-        
-    return ("Post not found")
+   cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
+   post = cursor.fetchone()
+   if post:
+       return post
+   return ("Post not found")
 
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
