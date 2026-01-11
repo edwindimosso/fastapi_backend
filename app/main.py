@@ -31,7 +31,7 @@ while True:
                                 password='Admin123', 
                                 cursor_factory=RealDictCursor)
         cursor = conn.cursor()
-        print("<<<<<<<<<<<<<<<<Database connection was successful!>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<<<<Database connection was successful!>>>>>>>>>>>>>>/n")
         break
 
     except Exception as error:
@@ -43,16 +43,15 @@ while True:
 def main():
     return "Hello, World!"
 
-@app.get("/sqlalchemy")
-def get_sqlalchemy(db: Session = Depends(get_db)):
-    return "SQLAlchemy is working!"
+
 
 @app.get("/posts")
-def get_all_posts():
-    cursor.execute("SELECT * FROM posts")
-    posts = cursor.fetchall()
-
+def get_all_posts(db: Session = Depends(get_db)): 
+    posts = db.query(models.PostModel).all()
     return posts 
+
+ # cursor.execute("SELECT * FROM posts")
+# posts = cursor.fetchall()
 
 @app.post("/posts")
 def add_posts(post: Post):
