@@ -54,33 +54,57 @@ def get_all_posts(db: Session = Depends(get_db)):
 # posts = cursor.fetchall()
 
 @app.post("/posts")
-def add_posts(post: Post):
-    cursor.execute("INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *",
-                   (post.title, post.content, post.published))
-    new_post = cursor.fetchone()
-    conn.commit()
+def add_posts(post: Post, db: Session = Depends(get_db)):
+    new_post = models.PostModel(**post.dict())
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
     return new_post
+
+# cursor.execute("INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *",
+    #                (post.title, post.content, post.published))
+    # new_post = cursor.fetchone()
+    # conn.commit()
 
 #nikipata namna ya kuweka latest post ntaweka hapa
 
 @app.get("/posts/{id}")
-def get_post(id: int):
-   cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
-   post = cursor.fetchone()
-   if post:
-       return post 
-   return ("Post not found")
+def get_post(id: int, db: Session = Depends(get_db)):
+    post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
+    if post:
+        return post
+    return "Post not found"
+
+###<<<<<<<< IGNORE >>>>>>
+#    cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
+#    post = cursor.fetchone()
+#    if post:
+#        return post 
+#    return ("Post not found")
+
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post):
-    cursor.execute("UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *",
-                   (post.title, post.content, post.published, str(id)))
-    updated_post = cursor.fetchone()
-    conn.commit()
+def update_post(id: int, post: Post, db: Session = Depends(get_db)):
+    updated_post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
     if updated_post:
-            return updated_post 
-        
+        updated_post.title = post.title
+        updated_post.content = post.content
+        db.commit()
+        db.refresh(updated_post)
+        return updated_post
+    
     return "Post not found"
+
+
+    #<<<<<<<<<<<<<< IGNORE >>>>>>>>>#
+    # cursor.execute("UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *",
+    #                (post.title, post.content, post.published, str(id)))
+    # updated_post = cursor.fetchone()
+    # conn.commit()
+    # if updated_post:
+    #         return updated_post 
+        
+    # return "Post not found"
 
 @app.delete("/posts/{id}")
 def delete_posts(id: int):
