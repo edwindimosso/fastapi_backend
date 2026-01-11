@@ -31,7 +31,7 @@ while True:
                                 password='Admin123', 
                                 cursor_factory=RealDictCursor)
         cursor = conn.cursor()
-        print("<<<<<<<<<<<<<<<<Database connection was successful!>>>>>>>>>>>>>>/n")
+        print("<<<<<<<<<<<<<<<<Database connection was successful!>>>>>>>>>>>>>>")
         break
 
     except Exception as error:
@@ -89,6 +89,7 @@ def update_post(id: int, post: Post, db: Session = Depends(get_db)):
     if updated_post:
         updated_post.title = post.title
         updated_post.content = post.content
+        updated_post.published = post.published
         db.commit()
         db.refresh(updated_post)
         return updated_post
@@ -107,11 +108,18 @@ def update_post(id: int, post: Post, db: Session = Depends(get_db)):
     # return "Post not found"
 
 @app.delete("/posts/{id}")
-def delete_posts(id: int):
-    cursor.execute("DELETE FROM posts WHERE id = %s RETURNING *", (str(id),))
-    deleted_post = cursor.fetchone()
-    conn.commit()
+def delete_posts(id: int, db: Session = Depends(get_db)):
+    deleted_post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
     if deleted_post:
-            return deleted_post
-        
+        db.delete(deleted_post)
+        db.commit()
+        db.refresh(deleted_post)
+        return deleted_post
     return "Post not found"
+    # cursor.execute("DELETE FROM posts WHERE id = %s RETURNING *", (str(id),))
+    # deleted_post = cursor.fetchone()
+    # conn.commit()
+    # if deleted_post:
+    #         return deleted_post
+        
+    # return "Post not found"
