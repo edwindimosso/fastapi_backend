@@ -85,17 +85,25 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post, db: Session = Depends(get_db)):
-    updated_post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
-    if updated_post:
-        updated_post.title = post.title
-        updated_post.content = post.content
-        updated_post.published = post.published
-        db.commit()
-        db.refresh(updated_post)
-        return updated_post
-    
-    return "Post not found"
+    # 1. Query the database for the existing post
+    post_query = db.query(models.PostModel).filter(models.PostModel.id == id)
+    updated_post = post_query.first()
 
+    if not updated_post:
+        return "Post not found"
+
+    # 2. Convert the incoming Pydantic model to a dictionary
+    # Use post.model_dump() if using Pydantic v2, or post.dict() for v1
+    update_data = post.dict()
+
+    # 3. Update the database model instance with the new values
+    post_query.update(update_data, synchronize_session=False)
+
+    # 4. Commit and refresh
+    db.commit()
+    db.refresh(updated_post)
+
+    return updated_post
 
     #<<<<<<<<<<<<<< IGNORE >>>>>>>>>#
     # cursor.execute("UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *",
@@ -115,6 +123,8 @@ def delete_posts(id: int, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(deleted_post)
         return deleted_post
+    
+    
     return "Post not found"
     # cursor.execute("DELETE FROM posts WHERE id = %s RETURNING *", (str(id),))
     # deleted_post = cursor.fetchone()
