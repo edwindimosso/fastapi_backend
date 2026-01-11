@@ -1,10 +1,23 @@
+from . import models
+from .database import SessionLocal, engine
 from fastapi import FastAPI
-from models import Post
+from app.models import Post
 from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
+
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 posts = [
     Post(id=1, title="First Post", content="This is the content of the first post"),
@@ -49,9 +62,7 @@ def add_posts(post: Post):
     conn.commit()
     return new_post
 
-@app.get("/posts/latest")
-def get_latest_post():
-    return posts[-1]  # leta post ya mwisho 
+#nikipata namna ya kuweka latest post ntaweka hapa
 
 @app.get("/posts/{id}")
 def get_post(id: int):
