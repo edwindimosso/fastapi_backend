@@ -1,6 +1,7 @@
 from . import models,schemas
 from .database import SessionLocal, engine, get_db
 from fastapi import FastAPI, Depends
+from passlib.context import CryptContext
 from .models import PostModel
 from pydantic import BaseModel
 from random import randrange
@@ -9,10 +10,12 @@ from psycopg2.extras import RealDictCursor
 import time
 from sqlalchemy.orm import Session
 
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
 
 #Database connection
 while True:
@@ -98,10 +101,15 @@ def delete_posts(id: int, db: Session = Depends(get_db)):
     
     
     return "Post not found"
+
    
  
 @app.post("/users", response_model=schemas.UserResponse)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+
+    hash_password = pwd_context.hash(user.password)
+    user.password = hash_password 
+
     new_user = models.UserModel(**user.dict())
     db.add(new_user)
     db.commit()
