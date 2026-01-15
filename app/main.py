@@ -53,12 +53,7 @@ def add_posts(post: schemas.PostCreate, db: Session = Depends(get_db)):
     db.refresh(new_post)
     return new_post
 
-# cursor.execute("INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *",
-    #                (post.title, post.content, post.published))
-    # new_post = cursor.fetchone()
-    # conn.commit()
 
-#nikipata namna ya kuweka latest post ntaweka hapa
 
 @app.get("/posts/{id}") 
 def get_post(id: int, db: Session = Depends(get_db)):
@@ -67,12 +62,6 @@ def get_post(id: int, db: Session = Depends(get_db)):
         return post
     return "Post not found"
 
-###<<<<<<<< IGNORE >>>>>>
-#    cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
-#    post = cursor.fetchone()
-#    if post:
-#        return post 
-#    return ("Post not found")
 
 
 @app.put("/posts/{id}", response_model=schemas.PostResponse)
@@ -97,15 +86,7 @@ def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)
 
     return updated_post
 
-    #<<<<<<<<<<<<<< IGNORE >>>>>>>>>#
-    # cursor.execute("UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *",
-    #                (post.title, post.content, post.published, str(id)))
-    # updated_post = cursor.fetchone()
-    # conn.commit()
-    # if updated_post:
-    #         return updated_post 
-        
-    # return "Post not found"
+ 
 
 @app.delete("/posts/{id}")
 def delete_posts(id: int, db: Session = Depends(get_db)):
@@ -117,13 +98,7 @@ def delete_posts(id: int, db: Session = Depends(get_db)):
     
     
     return "Post not found"
-    # cursor.execute("DELETE FROM posts WHERE id = %s RETURNING *", (str(id),))
-    # deleted_post = cursor.fetchone()
-    # conn.commit()
-    # if deleted_post:
-    #         return deleted_post
-        
-    # return "Post not found"
+   
  
 @app.post("/users", response_model=schemas.UserResponse)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
