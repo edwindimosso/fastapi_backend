@@ -1,7 +1,8 @@
-from . import models
+from . import models,schemas
 from .database import SessionLocal, engine, get_db
 from fastapi import FastAPI, Depends
-from app.models import Post
+from .models import PostModel
+from pydantic import BaseModel
 from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -13,15 +14,6 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
-
-posts = [
-    Post(id=1, title="First Post", content="This is the content of the first post"),
-    Post(id=2, title="Second Post", content="This is the content of the second post"),
-    Post(id=3, title="Third Post", content="This is the content of the third post"),
-    Post(id=4, title="Fourth Post", content="This is the content of the fourth post"),
-    Post(id=5, title="Fifth Post", content="This is the content of the fifth post")
-]
-
 #Database connection
 while True:
     try:
@@ -31,7 +23,7 @@ while True:
                                 password='Admin123', 
                                 cursor_factory=RealDictCursor)
         cursor = conn.cursor()
-        print("<<<<<<<<<<<<<<<<Database connection was successful!>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<<<< Database connection was successful!>>>>>>>>>>>>>>")
         break
 
     except Exception as error:
@@ -53,8 +45,8 @@ def get_all_posts(db: Session = Depends(get_db)):
  # cursor.execute("SELECT * FROM posts")
 # posts = cursor.fetchall()
 
-@app.post("/posts")
-def add_posts(post: Post, db: Session = Depends(get_db)):
+@app.post("/posts", response_model=schemas.PostResponse)
+def add_posts(post: schemas.PostCreate, db: Session = Depends(get_db)):
     new_post = models.PostModel(**post.dict())
     db.add(new_post)
     db.commit()
@@ -68,7 +60,7 @@ def add_posts(post: Post, db: Session = Depends(get_db)):
 
 #nikipata namna ya kuweka latest post ntaweka hapa
 
-@app.get("/posts/{id}")
+@app.get("/posts/{id}") 
 def get_post(id: int, db: Session = Depends(get_db)):
     post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
     if post:
@@ -84,7 +76,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post, db: Session = Depends(get_db)):
+def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)):
     # 1. Query the database for the existing post
     post_query = db.query(models.PostModel).filter(models.PostModel.id == id)
     updated_post = post_query.first()

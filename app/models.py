@@ -1,14 +1,10 @@
-from pydantic import BaseModel
+
 from .database import Base
 from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy.sql.expression import text
 
-class Post(BaseModel):
-    id: int | None = None
-    title: str
-    content: str
 
-    #zinanipa option ya kuweka au niache bila error
-    published: bool = True
 
 
 class PostModel(Base):
@@ -17,4 +13,7 @@ class PostModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     content = Column(String, nullable=False)
-    published = Column(Boolean, default=True) #default ni kama nilisema published ni True kama mtu hataweka kitu
+    published = Column(Boolean, default=True)#default ni kama nilisema published ni True kama mtu hataweka kitu
+    created_at = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=text('now()')
+    ) 
