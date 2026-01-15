@@ -125,3 +125,11 @@ def delete_posts(id: int, db: Session = Depends(get_db)):
     #         return deleted_post
         
     # return "Post not found"
+
+@app.post("/users", response_model=schemas.UserResponse)
+def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    new_user = models.UserModel(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user

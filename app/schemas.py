@@ -1,20 +1,30 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
     
-class PostBase(BaseModel):
 
+class PostCreate(BaseModel):
     title: str
     content: str
-
-    #zinanipa option ya kuweka au niache bila error
     published: bool = True
 
-class PostCreate(PostBase):
-    pass
-
-class PostResponse(PostBase):
+class PostResponse(BaseModel):
     id : int
+    title: str
+    content: str
     created_at: datetime
     
+    class Config:
+        orm_mode = True
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: datetime
+
     class Config:
         orm_mode = True
