@@ -113,7 +113,6 @@ def delete_posts(id: int, db: Session = Depends(get_db)):
     if deleted_post:
         db.delete(deleted_post)
         db.commit()
-        db.refresh(deleted_post)
         return deleted_post
     
     
@@ -125,7 +124,7 @@ def delete_posts(id: int, db: Session = Depends(get_db)):
     #         return deleted_post
         
     # return "Post not found"
-
+ 
 @app.post("/users", response_model=schemas.UserResponse)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     new_user = models.UserModel(**user.dict())
@@ -133,3 +132,43 @@ def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
+@app.get("/users", response_model=list[schemas.UserResponse])
+def get_all_users(db: Session = Depends(get_db)):
+    users = db.query(models.UserModel).all()
+    return users
+
+@app.get("/users/{id}", response_model=schemas.UserResponse)
+def get_user(id: int, db: Session = Depends(get_db)):
+    user = db.query(models.UserModel).filter(models.UserModel.id == id).first()
+    if user:
+        return user
+    return "User not found"
+
+@app.put("/users/{id}", response_model=schemas.UserResponse)
+def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)):
+    user_query = db.query(models.UserModel).filter(models.UserModel.id == id)
+    updated_user = user_query.first()
+
+    if not updated_user:
+        return "User not found"
+
+    update_data = user.dict()
+
+    user_query.update(update_data, synchronize_session=False)
+
+    db.commit()
+    db.refresh(updated_user)
+
+    return updated_user
+
+@app.delete("/users/{id}")
+def delete_user(id: int, db: Session = Depends(get_db)):
+    deleted_user = db.query(models.UserModel).filter(models.UserModel.id == id).first()
+    if deleted_user:
+        db.delete(deleted_user)
+        db.commit()
+        return deleted_user
+        
+    
+    return "User not found" 
