@@ -13,9 +13,7 @@ class PostCreate(PostBase):
     pass
 
 class PostResponse(PostBase):
-    
-    content: str
-    published: bool
+    id : int
     created_at: datetime
     
     class Config:

@@ -37,10 +37,10 @@ def main():
 
 
 
-@app.get("/posts")
+@app.get("/posts", response_model=list[schemas.PostResponse])
 def get_all_posts(db: Session = Depends(get_db)): 
     posts = db.query(models.PostModel).all()
-    return posts 
+    return posts
 
  # cursor.execute("SELECT * FROM posts")
 # posts = cursor.fetchall()
@@ -75,7 +75,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
 #    return ("Post not found")
 
 
-@app.put("/posts/{id}")
+@app.put("/posts/{id}", response_model=schemas.PostResponse)
 def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)):
     # 1. Query the database for the existing post
     post_query = db.query(models.PostModel).filter(models.PostModel.id == id)
