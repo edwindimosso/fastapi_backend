@@ -112,7 +112,7 @@ def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)
     update_data = user.dict(exclude_unset=True)
 
     if "password" in update_data:
-        update_data["password"] = pwd_context.hash(update_data["password"])
+        update_data["password"] = utils.hash_password(user.password)
 
     user_query.update(update_data, synchronize_session=False)
     db.commit()
