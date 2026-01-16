@@ -6,6 +6,7 @@ from typing import List
 
 router = APIRouter(
     prefix="/posts",
+    tags=["Posts"]
 )
 
 @router.get("/", response_model=List[schemas.PostResponse])
