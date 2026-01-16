@@ -4,9 +4,11 @@ from ..database import get_db
 from sqlalchemy.orm import Session
 from typing import List
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/users"
+)
 
-@router.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
     if user.email:
@@ -29,12 +31,12 @@ def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 
-@router.get("/users", response_model=List[schemas.UserResponse])
+@router.get("/", response_model=List[schemas.UserResponse])
 def get_all_users(db: Session = Depends(get_db)):
     return db.query(models.UserModel).all()
 
 
-@router.get("/users/{id}", response_model=schemas.UserResponse)
+@router.get("/{id}", response_model=schemas.UserResponse)
 def get_user(id: int, db: Session = Depends(get_db)):
     user = db.query(models.UserModel).filter(models.UserModel.id == id).first()
 
@@ -44,7 +46,7 @@ def get_user(id: int, db: Session = Depends(get_db)):
     return user
 
 
-@router.put("/users/{id}", response_model=schemas.UserResponse)
+@router.put("/{id}", response_model=schemas.UserResponse)
 def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)):
     user_query = db.query(models.UserModel).filter(models.UserModel.id == id)
     existing_user = user_query.first()
@@ -70,7 +72,7 @@ def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)
 
 
 
-@router.delete("/users/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(id: int, db: Session = Depends(get_db)):
     user = db.query(models.UserModel).filter(models.UserModel.id == id).first()
 
