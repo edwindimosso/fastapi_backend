@@ -1,55 +1,27 @@
-from . import models,schemas
-from .database import SessionLocal, engine, get_db
-from fastapi import FastAPI, Depends
-from passlib.context import CryptContext
-from .models import PostModel
-from pydantic import BaseModel
-from random import randrange
-import psycopg2
-from psycopg2.extras import RealDictCursor
-import time
+from . import models, schemas
+from .database import get_db, engine
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-#Database connection
-while True:
-    try:
-        conn = psycopg2.connect(host='localhost', 
-                                database='fastapiDB', 
-                                user='postgres', 
-                                password='Admin123', 
-                                cursor_factory=RealDictCursor)
-        cursor = conn.cursor()
-        print("<<<<<<<<<<<<<<<< Database connection was successful!>>>>>>>>>>>>>>")
-        break
-
-    except Exception as error:
-        print("Connection to database failed")
-        print("Error:", error)
-        time.sleep(3)
 
 @app.get("/")
 def main():
-    return "Hello, World!"
+    return {"message": "Hello, World!"}
 
 
+# ===================== POSTS =====================
 
 @app.get("/posts", response_model=list[schemas.PostResponse])
-def get_all_posts(db: Session = Depends(get_db)): 
-    posts = db.query(models.PostModel).all()
-    return posts
+def get_all_posts(db: Session = Depends(get_db)):
+    return db.query(models.PostModel).all()
 
- # cursor.execute("SELECT * FROM posts")
-# posts = cursor.fetchall()
 
-@app.post("/posts", response_model=schemas.PostResponse)
-def add_posts(post: schemas.PostCreate, db: Session = Depends(get_db)):
+@app.post("/posts", response_model=schemas.PostResponse, status_code=status.HTTP_201_CREATED)
+def add_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
     new_post = models.PostModel(**post.dict())
     db.add(new_post)
     db.commit()
@@ -57,101 +29,87 @@ def add_posts(post: schemas.PostCreate, db: Session = Depends(get_db)):
     return new_post
 
 
-
-@app.get("/posts/{id}") 
+@app.get("/posts/{id}", response_model=schemas.PostResponse)
 def get_post(id: int, db: Session = Depends(get_db)):
     post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
-    if post:
-        return post
-    return "Post not found"
 
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    return post
 
 
 @app.put("/posts/{id}", response_model=schemas.PostResponse)
 def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)):
-    # 1. Query the database for the existing post
     post_query = db.query(models.PostModel).filter(models.PostModel.id == id)
-    updated_post = post_query.first()
+    existing_post = post_query.first()
 
-    if not updated_post:
-        return "Post not found"
+    if not existing_post:
+        raise HTTPException(status_code=404, detail="Post not found")
 
-    # 2. Convert the incoming Pydantic model to a dictionary
-    # Use post.model_dump() if using Pydantic v2, or post.dict() for v1
-    update_data = post.dict()
-
-    # 3. Update the database model instance with the new values
-    post_query.update(update_data, synchronize_session=False)
-
-    # 4. Commit and refresh
+    post_query.update(post.dict(), synchronize_session=False)
     db.commit()
-    db.refresh(updated_post)
+    db.refresh(existing_post)
+    return existing_post
 
-    return updated_post
 
- 
+@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int, db: Session = Depends(get_db)):
+    post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
 
-@app.delete("/posts/{id}")
-def delete_posts(id: int, db: Session = Depends(get_db)):
-    deleted_post = db.query(models.PostModel).filter(models.PostModel.id == id).first()
-    if deleted_post:
-        db.delete(deleted_post)
-        db.commit()
-        return deleted_post
-    
-    
-    return "Post not found"
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
 
-   
- 
-@app.post("/users", response_model=schemas.UserResponse)
+    db.delete(post)
+    db.commit()
+
+
+# ===================== USERS =====================
+
+@app.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-
-    hash_password = pwd_context.hash(user.password)
-    user.password = hash_password 
-
     new_user = models.UserModel(**user.dict())
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
 
+
 @app.get("/users", response_model=list[schemas.UserResponse])
 def get_all_users(db: Session = Depends(get_db)):
-    users = db.query(models.UserModel).all()
-    return users
+    return db.query(models.UserModel).all()
+
 
 @app.get("/users/{id}", response_model=schemas.UserResponse)
 def get_user(id: int, db: Session = Depends(get_db)):
     user = db.query(models.UserModel).filter(models.UserModel.id == id).first()
-    if user:
-        return user
-    return "User not found"
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
 
 @app.put("/users/{id}", response_model=schemas.UserResponse)
 def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)):
     user_query = db.query(models.UserModel).filter(models.UserModel.id == id)
-    updated_user = user_query.first()
+    existing_user = user_query.first()
 
-    if not updated_user:
-        return "User not found"
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    update_data = user.dict()
-
-    user_query.update(update_data, synchronize_session=False)
-
+    user_query.update(user.dict(), synchronize_session=False)
     db.commit()
-    db.refresh(updated_user)
+    db.refresh(existing_user)
+    return existing_user
 
-    return updated_user
 
-@app.delete("/users/{id}")
+@app.delete("/users/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(id: int, db: Session = Depends(get_db)):
-    deleted_user = db.query(models.UserModel).filter(models.UserModel.id == id).first()
-    if deleted_user:
-        db.delete(deleted_user)
-        db.commit()
-        return deleted_user
-        
-    
-    return "User not found" 
+    user = db.query(models.UserModel).filter(models.UserModel.id == id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(user)
+    db.commit()
