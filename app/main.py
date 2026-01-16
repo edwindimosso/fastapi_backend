@@ -111,7 +111,10 @@ def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)
     user_query = db.query(models.UserModel).filter(models.UserModel.id == id)
     existing_user = user_query.first()
 
-
+    if user.email:
+        email_exists = db.query(models.UserModel).filter(models.UserModel.email == user.email).first()
+        if email_exists:
+            raise HTTPException(status_code=400, detail="Email already exists")
 
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
