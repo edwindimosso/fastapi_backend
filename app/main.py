@@ -1,13 +1,9 @@
-from . import models, schemas
-from passlib.context import CryptContext
+from . import models, schemas, utils
 from .database import get_db, engine
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-pwd_context = CryptContext(
-    schemes=["argon2"],
-    deprecated="auto"
-)
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -75,7 +71,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 @app.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
-    hashed_password = pwd_context.hash(user.password)
+    hashed_password = utils.hash_password(user.password)
 
     new_user = models.UserModel(
         **user.dict(exclude={"password"}),
