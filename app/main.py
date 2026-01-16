@@ -1,7 +1,13 @@
 from . import models, schemas
+from passlib.context import CryptContext
 from .database import get_db, engine
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
+pwd_context = CryptContext(
+    schemes=["argon2"],
+    deprecated="auto"
+)
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -10,7 +16,7 @@ app = FastAPI()
 
 @app.get("/")
 def main():
-    return {"message": "Hello, World!"}
+    return "Hello, World!"
 
 
 # ===================== POSTS =====================
@@ -68,11 +74,20 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 
 @app.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    new_user = models.UserModel(**user.dict())
+
+    hashed_password = pwd_context.hash(user.password)
+
+    new_user = models.UserModel(
+        **user.dict(exclude={"password"}),
+        password=hashed_password
+    )
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
+
 
 
 @app.get("/users", response_model=list[schemas.UserResponse])
@@ -98,10 +113,16 @@ def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_query.update(user.dict(), synchronize_session=False)
+    update_data = user.dict(exclude_unset=True)
+
+    if "password" in update_data:
+        update_data["password"] = pwd_context.hash(update_data["password"])
+
+    user_query.update(update_data, synchronize_session=False)
     db.commit()
     db.refresh(existing_user)
     return existing_user
+
 
 
 @app.delete("/users/{id}", status_code=status.HTTP_204_NO_CONTENT)
