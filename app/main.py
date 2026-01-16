@@ -71,6 +71,11 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 @app.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def add_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
+    if user.email:
+        email_exists = db.query(models.UserModel).filter(models.UserModel.email == user.email).first()
+        if email_exists:
+            raise HTTPException(status_code=400, detail="Email already exists")
+
     hashed_password = utils.hash_password(user.password)
 
     new_user = models.UserModel(
@@ -106,8 +111,11 @@ def update_user(id: int, user: schemas.UserCreate, db: Session = Depends(get_db)
     user_query = db.query(models.UserModel).filter(models.UserModel.id == id)
     existing_user = user_query.first()
 
+
+
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
 
     update_data = user.dict(exclude_unset=True)
 
