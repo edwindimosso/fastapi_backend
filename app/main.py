@@ -5,8 +5,7 @@ from . import models, schemas, utils
 from .database import get_db, engine
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from .routers import post, user
-
+from .routers import post, user, auth
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -38,8 +37,8 @@ def main():
     return "Hello, World!"
 
 
-# ===================== POSTS =====================
 app.include_router(post.router)
 
-# ===================== USERS =====================
 app.include_router(user.router)
+
+app.include_router(auth.router)
