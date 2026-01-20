@@ -15,7 +15,7 @@ class PostResponse(BaseModel):
     created_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -26,7 +26,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     created_at: datetime
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserLogin(BaseModel):
     email: EmailStr
