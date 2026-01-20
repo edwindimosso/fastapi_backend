@@ -15,7 +15,7 @@ def get_all_posts(db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.PostResponse, status_code=status.HTTP_201_CREATED)
-def add_post(post: schemas.PostCreate, db: Session = Depends(get_db),get_current_user: int = Depends(oauth2.get_current_user)):
+def add_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
     new_post = models.PostModel(**post.dict())
     db.add(new_post)
     db.commit()
